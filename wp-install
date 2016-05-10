@@ -1,0 +1,70 @@
+#!/bin/bash
+# WP Install
+# Get latest wordpress install and EBM it
+
+function wp_install
+{
+	# Set local variables 
+	local directory_name=$1
+	local db_name=$2
+
+	# Check if directory exists, remove and enter
+	if [ -d "$directory_name" ]; then
+		rm -rf "$directory_name"
+	fi
+	cd "$WP"
+	mkdir $directory_name
+	cd "$directory_name"
+
+	# Get latest wp install
+	curl -O https://wordpress.org/latest.tar.gz
+	tar -xvf latest.tar.gz
+	cp -R wordpress/. .
+	rm -r wordpress/
+	mv wp-config-sample.php wp-config.php
+	# Set ending php tag for w-config due to heading errors
+	echo -e "?>" >> wp-config.php
+
+	# Replace some file placeholder names with local vars
+	sed -i '' "s/database_name_here/$db_name/g" wp-config.php
+	sed -i '' "s/username_here/root/g" wp-config.php
+	sed -i '' "s/password_here/root/g" wp-config.php
+
+	# Install EBM BP
+	cd wp-content/themes
+	git clone https://github.com/EasyBoxModel/EBM.git
+	mv EBM $directory_name
+	cd "$directory_name"
+
+	# Get WP branch TODO: make submodule
+	rm -rf .git/
+	git clone -b wordpress-boilerplate git@github.com:EasyBoxModel/EBM.git
+
+	# RM EBM .git folder and move files to parent folder
+	cd EBM
+	rm -rf .git/
+ 	find . -maxdepth 1 -type f -execdir mv -nv -- {} .. \;
+ 	find . -maxdepth 1 -type d -execdir mv -nv -- {} .. \;
+
+ 	# Remove EBM clone empty folder
+	cd ..
+	rm -rf EBM
+
+	# Move EBM .gitignore to root folder
+	cd ..
+	mv $directory_name/.gitignore ../..
+	mv $directory_name/README.md ../..
+
+	# Remove extra themes
+	rm -rf twentyfourteen twentythirteen twentyfifteen
+
+	# Replace .gitignore placeholders
+	cd ../..
+	sed -i '' "s/THEMENAME/$directory_name/g" .gitignore
+
+	# NEw git - new sublime text 
+	git init
+	stt
+}
+
+wp_install $1 $2

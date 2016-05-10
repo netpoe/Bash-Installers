@@ -1,0 +1,61 @@
+#!/bin/bash
+# Meteor Directories
+
+mvc=()
+
+function create_directories {
+	view=$1
+	
+	if [ -d "client/views/$view" ]; then
+		rm -rf "client/views/$view"
+	fi
+	mkdir "client/views/$view"
+	touch	"lib/router/router-$view.js" \
+				"lib/collections/collection-$view.js" \
+				"server/methods/methods-$view.js" \
+				"server/publications/publications-$view.js"
+	for i in ${mvc[@]}
+	do
+		touch "client/views/$view/$view-$i.html" \
+					"client/views/$view/$view-$i.js"
+	done
+}
+
+function remove_directories {
+	for view in $1
+	do
+		if [ -d "client/views/$view" ]; 
+		then
+			rm -rf "client/views/$view"
+		fi
+		rm -rf	"lib/router/controller-$view.js" \
+					"lib/collections/collection-$view.js" \
+					"server/methods/methods-$view.js" \
+					"server/publications/publications-$view.js"
+		for i in ${@:2}; do
+			rm -rf "client/views/$view/$view-$i.html" \
+						"client/views/$view/$view-$i.js"
+		done
+	done
+}
+
+while getopts "r:c:v:" OPTION
+do
+	case $OPTION in
+		r)
+			remove_directories $2
+			exit 0
+			;;
+		c) # View names index, show, new, edit
+			mvc+=($OPTARG)
+			;;
+		v) # View name
+			create_directories $OPTARG
+			exit 0
+			;;
+		?)
+			create_directories $2
+			exit 0
+			;;
+	esac
+done

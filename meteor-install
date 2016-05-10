@@ -1,0 +1,103 @@
+#!/bin/bash
+# Meteor Install
+
+# Open new tab in iTerm
+function new_iterm_tab
+{
+	local cmd=$1
+	osascript -e 'tell application "iTerm" to activate' \
+	-e 'tell application "System Events" to tell process "iTerm" to keystroke "t" using command down' \
+	-e 'tell application "System Events" to tell process "iTerm" to keystroke "cd $Meteor' \
+	-e 'tell application "System Events" to tell process "iTerm" to keystroke "clear"' \
+	-e 'tell application "System Events" to tell process "iTerm" to key code 52'
+}
+
+function meteor_install
+{
+	# Local project name for meteor create
+	local project_name=$1
+
+	if [ -z "$project_name" ]; then
+    echo "Specify a project name with no spaces"
+    exit 1
+	fi
+	
+	cd "$Meteor"
+	meteor create $project_name
+	cd "$project_name"
+
+	# Remove autocreated files to copy bp_Meteor3/.
+	find "client" "server" -delete 	
+	cp -R "$Meteor/bp_Meteor3/." "$Meteor/$project_name/"
+
+	# Remove .git folder
+	rm -rf ".git"
+
+	# Copy EBM stylesheets into imports/ui/stylehseets
+	cp -R "$EBM/src/scss/." "$Meteor/$project_name/imports/ui/stylesheets/"
+
+	# Start git instance
+	git init
+
+	# Handle packages remove/install
+	meteor remove insecure autopublish
+	meteor add 	kadira:flow-router kadira:blaze-layout \
+							underscore \
+							random \
+							accounts-base accounts-password accounts-ui \
+							aldeed:collection2 aldeed:simple-schema \
+							session templating reactive-dict reactive-var \
+							service-configuration ddp-rate-limiter \
+							momentjs:moment \
+							http \
+							alanning:roles \
+							mdg:validated-method mdg:validation-error \
+							useraccounts:flow-routing useraccounts:unstyled
+
+	# Install grunt dependencies for independent stylesheets compiling
+	cd ".grunt" 
+	npm install
+
+	# Open new iTerm tab to run grunt independently
+	new_iterm_tab
+
+	# Move to project root 
+	cd ..
+
+	# Remove .placeholder folder
+	rm -rf ".placeholder"
+
+	# Update packages, open sublime and run meteor
+	meteor update 
+	stt
+	meteor
+}
+
+meteor_install $1
+
+
+
+
+
+
+# Pass a Domain name to create views TODO
+# local -a view_names
+# view_names=('index' 'show' 'new' 'edit')
+
+# find . -maxdepth 1 -not -name ".meteor" -delete
+# cp -R "$Meteor/meteor_BP/." "$Meteor/$project_name/"
+
+# for view in ${@:2}
+# do
+# 	mkdir "client/views/$view"
+# 	touch	"lib/router/controller-$view.js" \
+# 				"lib/collections/collection-$view.js" \
+# 				"server/methods/methods-$view.js" \
+# 				"server/publications/publications-$view.js"
+# 	for i in ${view_names[@]}; do
+# 		touch "client/views/$view/$view-$i.html" \
+# 					"client/views/$view/$view-$i.js"
+# 	done
+# done
+
+# meteor add iron:router underscore jquery check reactive-var tracker random accounts-base accounts-password accounts-ui aldeed:collection2 aldeed:simple-schema ecmascript session service-configuration momentjs:moment http alanning:roles	

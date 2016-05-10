@@ -1,0 +1,51 @@
+#!/bin/bash
+# WP Build to server
+# Get latest wordpress install and EBM it
+
+function wp_build
+{
+	# check if in project root
+	if [ ! -f ".gitignore" ]; then
+		echo 'No .gitignore file in current directory'
+		return
+	fi
+
+	# Check if master changes are commited
+	gitc=`git status | grep -e "Changes to be commited"`
+	if [[ -n "$gitc" ]]; then
+		echo 'Please commit your changes'
+		return
+	fi
+
+	# Get user@host.1.1.1 -p password
+	local server_user_host=$1
+	local server_directory_name=$2
+
+	# Create build branch
+	git checkout master
+	git push origin --delete build
+	git branch -D build
+	git checkout -b build
+
+	# Uncomment gitignore file
+	sed -i '' "s/#build //g" .gitignore
+
+	# Add and commit
+	git add -A .
+
+	# Removed cached files from master
+	git rm --cached -r .
+
+	# Commit again and push
+	git add -A .
+	git commit -m "Build and upload"
+	git push origin build
+
+	# Connect to server via ssh
+	eval "$(ssh-agent -s)"
+	ssh-add ~/.ssh/ssh_Netpoe
+	ssh-add ~/.ssh/ssh_Gus
+	ssh -o ServerAliveInterval=100 -o "LocalCommand source ~/bin/wp-build $server_directory_name" $server_user_host -p 2222
+}
+
+wp_build $1 $2
