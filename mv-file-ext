@@ -1,0 +1,15 @@
+#!/bin/bash
+# Change file extensions
+
+function mv_replace
+{
+  local current_ext=$1
+  local new_ext=$2
+
+  for i in $(find . -name "*.$current_ext*"); 
+  do 
+    mv "$i" "${i%.$current_ext}.$new_ext"
+  done
+}
+
+mv_replace $1 $2

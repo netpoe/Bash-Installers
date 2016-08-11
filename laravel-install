@@ -5,7 +5,7 @@ function new_iterm_tab
 {
 	osascript -e 'tell application "iTerm" to activate' \
 	-e 'tell application "System Events" to tell process "iTerm" to keystroke "d" using command down' \
-	-e 'tell application "System Events" to tell process "iTerm" to keystroke "cd $HTD/Laravel"' \
+	-e 'tell application "System Events" to tell process "iTerm" to keystroke "cd $p/Laravel"' \
 	-e 'tell application "System Events" to tell process "iTerm" to key code 52'
 }
 
@@ -14,7 +14,7 @@ function laravel_install
 	# Set local variables 
 	local directory_name=$1
 	local db_name=$2
-	local project_root="$HTD/Laravel/$directory_name"
+	local project_root="$p/Laravel/$directory_name"
 
 	# Check if variables exist
 	if [ -z "$directory_name" ]; then
@@ -32,10 +32,10 @@ function laravel_install
 	fi
 
 	# Enter laravel folder and create project with name
-	cd "$HTD/Laravel/"
+	cd "$p/Laravel/"
 	laravel new $directory_name
 	cd "$directory_name"
-	composer.phar install
+	composer install
 
 	# Change env.example name and generate key
 	mv ".env.example" ".env"
@@ -48,28 +48,32 @@ function laravel_install
 	# RM EBM .git folder and move files to parent folder
 	cd EBM
 	rm -rf .git/ app/ .github/ Gruntfile.js package.json 
- 	# find . -maxdepth 1 -type f -execdir mv -nv -- {} .. \;
- 	# find . -maxdepth 1 -type d -execdir mv -nv -- {} .. \;
-
- 	# Remove EBM clone empty folder
-	# cd ..
-	# rm -rf EBM
 
 	# Move EBM .gitignore to root folder
 	mv .gitignore "$project_root"
 	mv README.md "$project_root"
 	cd "$project_root"
 
+	# Build login/register
+	php artisan make:auth
+
 	# Copy bp_Laravel5 layout files
-	cp -R "$HTD/Laravel/bp_Laravel5/resources/views/includes" "resources/views/"
-	cp -R "$HTD/Laravel/bp_Laravel5/resources/views/layout.blade.php" "resources/views/"
-	cp -R "$HTD/Laravel/bp_Laravel5/resources/views/welcome.blade.php" "resources/views/"
-	cp -R "$HTD/Laravel/bp_Laravel5/Gruntfile.js" "./"
-	cp -R "$HTD/Laravel/bp_Laravel5/package.json" "./"
-	cp -R "$HTD/Laravel/bp_Laravel5/config/database.php" "config/"
-	
+	cp -R "$p/Laravel/bp_Laravel5/resources/views/includes" "resources/views/"
+	cp -R "$p/Laravel/bp_Laravel5/resources/views/bp_layout.blade.php" "resources/views/"
+	cp -R "$p/Laravel/bp_Laravel5/resources/views/bp_welcome.blade.php" "resources/views/"
+	cp -R "$p/Laravel/bp_Laravel5/app/User.php" "app/"
+	cp -R "$p/Laravel/bp_Laravel5/app/Services" "app/"
+	cp -R "$p/Laravel/bp_Laravel5/app/Http/Controllers/RegistrationController.php" "app/Http/Controllers/"
+	cp -R "$p/Laravel/bp_Laravel5/database/migrations/bp_users-migration.php" "database/migrations/"
+	cp -R "$p/Laravel/bp_Laravel5/Gruntfile.js" "./"
+	cp -R "$p/Laravel/bp_Laravel5/package.json" "./"
+	cp -R "$p/Laravel/bp_Laravel5/config/database.php" "config/"
+
 	# Replace some file placeholder names with local vars
 	sed -i '' "s/DB_NAME/$db_name/g" "config/database.php"
+	sed -i '' "s/DB_DATABASE=homestead/DB_DATABASE=$db_name/g" ".env"
+	sed -i '' "s/DB_USERNAME=homestead/DB_USERNAME=root/g" ".env"
+	sed -i '' "s/DB_PASSWORD=secret/DB_PASSWORD=root/g" ".env"
 
 	# New git - new sublime text 
 	git init
@@ -82,9 +86,6 @@ function laravel_install
 	mysql -e "CREATE DATABASE $db_name; exit;"
 
 	new_iterm_tab
-
-	# Start localhost:8000
-	php artisan serve -q
 }
 
 laravel_install $1 $2
