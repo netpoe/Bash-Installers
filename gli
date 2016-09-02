@@ -1,0 +1,104 @@
+#!/bin/bash
+# GitLab Issues
+
+# Get gli command action: post-issue, get-issues
+action=$1
+
+# Query params
+query=''
+method=GET
+
+# Issue params
+project_id=
+issue_title=
+issue_description=
+issue_labels=
+
+function post_issue 
+{
+  # echo $project_id
+  # echo $issue_title
+  # echo $issue_description
+  # echo $issue_labels
+  # return
+  query="projects/$project_id/issues?title=$issue_title&labels=$issue_labels&description=$issue_description"
+  auth $query
+}
+
+function get_issues
+{
+  query=projects/$project_id/issues
+  auth $query
+}
+
+# function get_issues
+# {}
+
+function auth
+{
+  curl -G --request $method --header "PRIVATE-TOKEN: $gitlab_token" http://git.konfio.mx/api/v3/$query | python -mjson.tool
+  return
+}
+
+function search_project_by_name
+{
+  method=GET
+  query=projects/search/$1
+  auth $query
+}
+
+while getopts ":p:s:m:t:l:d:" OPTION
+do
+  case $OPTION in
+    m) # Get the method POST or GET for issues
+      method=$OPTARG
+      ;;
+    p) # Post issue with project id 
+      project_id=$OPTARG
+      ;;
+    t) # Issue title
+      issue_title=`echo $OPTARG | sed 's/ /%20/g'`
+      ;;
+    d) # Issue description
+      issue_description=`echo $OPTARG | sed 's/ /%20/g'`
+      ;;
+    l) # Issue label
+      issue_labels=`echo $OPTARG | sed 's/ /%20/g'`
+      ;;
+    s)
+      search_project_by_name $OPTARG
+      exit 0
+      ;;
+    \?)
+      echo 'Illegal option for gli'
+      ;;
+  esac
+done
+
+function init
+{
+  if [ -z "$project_id" ]; then
+    echo 'No GitLab project_id was provided'
+    return
+  fi
+
+  if [ "$method" == "POST" ]; then
+    if [ -z "$issue_title" ]; then
+      echo 'No issue title was provided'
+      return
+    fi
+    if [ -z "$issue_description" ]; then
+      echo 'No issue description was provided'
+      return
+    fi
+    if [ -z "$issue_labels" ]; then
+      echo 'No issue label was provided'
+      return
+    fi
+    post_issue
+  fi
+
+  get_issues
+}
+
+init
