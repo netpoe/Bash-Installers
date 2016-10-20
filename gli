@@ -16,11 +16,6 @@ issue_labels=
 
 function post_issue 
 {
-  # echo $project_id
-  # echo $issue_title
-  # echo $issue_description
-  # echo $issue_labels
-  # return
   query="projects/$project_id/issues?title=$issue_title&labels=$issue_labels&description=$issue_description"
   auth $query
 }
@@ -30,9 +25,6 @@ function get_issues
   query=projects/$project_id/issues
   auth $query
 }
-
-# function get_issues
-# {}
 
 function auth
 {

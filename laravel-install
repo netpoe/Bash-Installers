@@ -15,6 +15,8 @@ function laravel_install
 	local directory_name=$1
 	local db_name=$2
 	local project_root="$p/Laravel/$directory_name"
+	local resources_path="resources/assets"
+	local resources_esc_path="resources\/assets"
 
 	# Check if variables exist
 	if [ -z "$directory_name" ]; then
@@ -42,17 +44,24 @@ function laravel_install
 	php artisan key:generate
 
 	# Install EBM BP
-	cd "resources/assets/"
-	git clone git@github.com:EasyBoxModel/EBM.git
+	cd "$resources_path"
+	rm -rf js sass
+	git clone git@github.com:EasyBoxModel/EBM.git .
 
-	# RM EBM .git folder and move files to parent folder
-	cd EBM
-	rm -rf .git/ app/ .github/ Gruntfile.js package.json 
-
-	# Move EBM .gitignore to root folder
+	# Move EBM files to project root folder
+	rm -rf .git .github
+	mv gulpfile.js "$project_root"
+	mv .editorconfig "$project_root"
 	mv .gitignore "$project_root"
-	mv README.md "$project_root"
+	mv package.json "$project_root"
+	
 	cd "$project_root"
+
+	# Update gulpfile and scss deps to update laravel assets folder
+	sed -i '' "s/SRC_FOLDER/$resources_esc_path/g" "gulpfile.js"
+	sed -i '' "s/SRC_FOLDER/$resources_esc_path/g" "$resources_path/sass/global.scss"
+	sed -i '' "s/SRC_FOLDER/$resources_esc_path/g" "$resources_path/sass/example.scss"
+	sed -i '' "s/SRC_FOLDER/$resources_esc_path/g" "$resources_path/sass/_ebm-imports-reference.scss"
 
 	# Build login/register
 	php artisan make:auth
@@ -65,8 +74,6 @@ function laravel_install
 	cp -R "$p/Laravel/bp_Laravel5/app/Services" "app/"
 	cp -R "$p/Laravel/bp_Laravel5/app/Http/Controllers/RegistrationController.php" "app/Http/Controllers/"
 	cp -R "$p/Laravel/bp_Laravel5/database/migrations/bp_users-migration.php" "database/migrations/"
-	cp -R "$p/Laravel/bp_Laravel5/Gruntfile.js" "./"
-	cp -R "$p/Laravel/bp_Laravel5/package.json" "./"
 	cp -R "$p/Laravel/bp_Laravel5/config/database.php" "config/"
 
 	# Replace some file placeholder names with local vars
@@ -79,8 +86,8 @@ function laravel_install
 	git init
 	stt
 
-	# Install grunt deps
-	echo $sudo_pwd | sudo -S npm install
+	# Install gulp deps
+	npm install
 
 	# Create database
 	mysql -e "CREATE DATABASE $db_name; exit;"
